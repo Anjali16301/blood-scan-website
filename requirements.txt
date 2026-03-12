@@ -7,6 +7,3 @@ werkzeug==2.3.7
 numpy
 gdown
 Pillow
-```
-```
-Then download and upload to GitHub
