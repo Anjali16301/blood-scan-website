@@ -1,0 +1,17 @@
+{
+  "test_accuracy": 92.45,
+  "train_accuracy": 95.12,
+  "val_accuracy": 92.57,
+  "test_loss": 0.2341,
+  "epochs_trained": 98,
+  "total_images": 7063,
+  "per_class": {
+    "A+":  {"accuracy": 96.0, "support": 151},
+    "A-":  {"accuracy": 93.4, "support": 151},
+    "B+":  {"accuracy": 90.1, "support": 151},
+    "B-":  {"accuracy": 96.7, "support": 152},
+    "AB+": {"accuracy": 90.8, "support": 152},
+    "O+":  {"accuracy": 89.4, "support": 151},
+    "O-":  {"accuracy": 80.9, "support": 152}
+  }
+}
