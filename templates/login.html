@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Blood Group Detection — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:#0a0e27;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.bg{position:fixed;inset:0;background:linear-gradient(135deg,#0a0e27,#1a1f3a,#0a0e27);z-index:0;}
+.bg::before{content:'';position:absolute;width:200%;height:200%;background:radial-gradient(circle,rgba(0,212,255,0.06) 1px,transparent 1px);background-size:40px 40px;animation:bgmove 25s linear infinite;}
+@keyframes bgmove{0%{transform:translate(0,0)}100%{transform:translate(40px,40px)}}
+.glow1{position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(0,212,255,0.15),transparent 70%);pointer-events:none;z-index:0;}
+.glow2{position:fixed;bottom:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(255,0,110,0.12),transparent 70%);pointer-events:none;z-index:0;}
+.scan{position:fixed;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,transparent,#00d4ff,transparent);animation:scanline 3s linear infinite;z-index:10;}
+@keyframes scanline{0%{transform:translateY(-10px);opacity:0}20%{opacity:1}80%{opacity:1}100%{transform:translateY(100vh);opacity:0}}
+.box{position:relative;z-index:5;background:rgba(16,20,50,0.95);border:1px solid rgba(0,212,255,0.25);border-radius:24px;padding:3rem 2.5rem;width:92%;max-width:460px;box-shadow:0 0 60px rgba(0,212,255,0.15),inset 0 1px 0 rgba(255,255,255,0.05);animation:boxin 0.6s cubic-bezier(0.175,0.885,0.32,1.275);}
+@keyframes boxin{from{opacity:0;transform:translateY(-40px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.logo{text-align:center;margin-bottom:2.2rem;}
+.dna{font-size:3rem;margin-bottom:0.5rem;display:block;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+h1{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;letter-spacing:0.2em;background:linear-gradient(135deg,#00d4ff,#ff006e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sub{color:#718096;font-size:0.82rem;letter-spacing:0.18em;text-transform:uppercase;margin-top:0.4rem;}
+.badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.9rem;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);border-radius:20px;color:#00ff88;font-size:0.72rem;margin-top:0.6rem;letter-spacing:0.12em;}
+.dot-live{width:6px;height:6px;background:#00ff88;border-radius:50%;animation:blink 1.2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.1}}
+.err{background:rgba(255,51,102,0.12);border:1px solid rgba(255,51,102,0.4);color:#ff6b8a;padding:0.8rem 1rem;border-radius:10px;margin-bottom:1.2rem;text-align:center;font-size:0.9rem;}
+.field{margin-bottom:1.2rem;}
+label{display:block;color:#00d4ff;font-weight:700;margin-bottom:0.4rem;letter-spacing:0.12em;font-size:0.82rem;text-transform:uppercase;}
+input{width:100%;padding:0.9rem 1.1rem;background:rgba(0,212,255,0.04);border:1.5px solid rgba(0,212,255,0.2);border-radius:11px;color:#e2e8f0;font-size:1rem;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all 0.3s;outline:none;}
+input::placeholder{color:#4a5568;font-weight:400;}
+input:focus{border-color:#00d4ff;background:rgba(0,212,255,0.07);box-shadow:0 0 0 3px rgba(0,212,255,0.12);}
+.btn{width:100%;padding:1rem;background:linear-gradient(135deg,#00d4ff,#7b2cbf);border:none;border-radius:12px;color:#fff;font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:0.2em;cursor:pointer;transition:all 0.3s;margin-top:0.5rem;}
+.btn:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,212,255,0.4);}
+.btn:active{transform:translateY(0);}
+.creds{margin-top:1.8rem;padding:1.1rem;background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.18);border-radius:14px;}
+.creds h3{color:#00ff88;margin-bottom:0.8rem;font-size:0.78rem;letter-spacing:0.12em;text-align:center;text-transform:uppercase;}
+.cred-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;}
+.ci{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.12);border-radius:9px;padding:0.6rem 0.3rem;text-align:center;cursor:pointer;transition:all 0.2s;}
+.ci:hover{border-color:rgba(0,212,255,0.4);background:rgba(0,212,255,0.1);}
+.ci .role{font-size:0.65rem;color:#718096;text-transform:uppercase;letter-spacing:0.1em;}
+.ci .uname{font-family:'Orbitron',sans-serif;font-size:0.72rem;color:#00d4ff;font-weight:700;margin:0.2rem 0;}
+.ci .pass{font-size:0.68rem;color:#4a5568;font-family:'Courier New',monospace;}
+.note{margin-top:1rem;text-align:center;font-size:0.72rem;color:#4a5568;}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="glow1"></div>
+<div class="glow2"></div>
+<div class="scan"></div>
+<div class="box">
+  <div class="logo">
+    <span class="dna">🩸</span>
+    <h1>BLOOD SCAN</h1>
+    <p class="sub">AI Fingerprint Analysis</p>
+    <span class="badge"><span class="dot-live"></span>PUBLIC WEBSITE</span>
+  </div>
+  {% if error %}<div class="err">⚠️ {{ error }}</div>{% endif %}
+  <form method="POST" action="/login">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" name="username" required autofocus placeholder="Enter username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" name="password" required placeholder="Enter password">
+    </div>
+    <button type="submit" class="btn">ACCESS SYSTEM →</button>
+  </form>
+  <div class="creds">
+    <h3>🔐 Demo Credentials — Click to Fill</h3>
+    <div class="cred-grid">
+      <div class="ci" onclick="fill('admin','admin123')">
+        <div class="role">Admin</div>
+        <div class="uname">admin</div>
+        <div class="pass">admin123</div>
+      </div>
+      <div class="ci" onclick="fill('doctor','doctor123')">
+        <div class="role">Doctor</div>
+        <div class="uname">doctor</div>
+        <div class="pass">doctor123</div>
+      </div>
+      <div class="ci" onclick="fill('user','user123')">
+        <div class="role">User</div>
+        <div class="uname">user</div>
+        <div class="pass">user123</div>
+      </div>
+    </div>
+  </div>
+  <p class="note">⚠️ For research & educational purposes only</p>
+</div>
+<script>
+function fill(u,p){
+  document.querySelector('input[name=username]').value=u;
+  document.querySelector('input[name=password]').value=p;
+}
+</script>
+</body>
+</html>

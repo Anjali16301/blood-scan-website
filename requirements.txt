@@ -1,0 +1,12 @@
+flask==2.3.3
+gunicorn==21.2.0
+opencv-python-headless
+tensorflow-cpu==2.16.1
+scikit-learn
+werkzeug==2.3.7
+numpy
+gdown
+Pillow
+```
+```
+Then download and upload to GitHub

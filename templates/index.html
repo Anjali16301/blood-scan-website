@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Blood Group Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+</head>
+<body>
+<div class="scan-line"></div>
+<div class="page">
+
+  <header class="header">
+    <div class="logo">
+      <h1>🩸 BLOOD SCAN</h1>
+      <p>AI-Powered Fingerprint Analysis System</p>
+    </div>
+    <div class="hright">
+      <div class="chip cyan">👤 {{ username }}</div>
+      <div class="chip green"><span class="dot"></span>SYSTEM LIVE</div>
+      <a href="/logout" class="btn-out">LOGOUT</a>
+    </div>
+  </header>
+
+  {% if report %}
+  <p class="sec-title">📊 MODEL ACCURACY</p>
+  <div class="acc-grid">
+    <div class="acc-card main">
+      <div class="acc-icon">🎯</div>
+      <div class="acc-label">Test Accuracy</div>
+      <div class="acc-number">{{ report.test_accuracy }}<span class="pct">%</span></div>
+      <div class="acc-sub">Final performance on unseen data</div>
+    </div>
+    <div class="acc-card">
+      <div class="acc-icon">📈</div>
+      <div class="acc-label">Train Accuracy</div>
+      <div class="acc-number">{{ report.train_accuracy }}<span class="pct">%</span></div>
+      <div class="acc-sub">{{ report.epochs_trained }} epochs trained</div>
+    </div>
+    <div class="acc-card">
+      <div class="acc-icon">📊</div>
+      <div class="acc-label">Validation Accuracy</div>
+      <div class="acc-number">{{ report.val_accuracy }}<span class="pct">%</span></div>
+      <div class="acc-sub">{{ report.total_images }} total images used</div>
+    </div>
+  </div>
+
+  <p class="sec-title">🩸 PER BLOOD GROUP ACCURACY</p>
+  <div class="bg-grid">
+    {% for bg, s in report.per_class.items() %}
+    <div class="bg-card">
+      <div class="bg-name">{{ bg }}</div>
+      <div class="bg-num {% if s.accuracy >= 88 %}good{% elif s.accuracy >= 70 %}mid{% else %}low{% endif %}">
+        {{ s.accuracy }}<span style="font-size:1rem">%</span>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-fill {% if s.accuracy >= 88 %}good{% elif s.accuracy >= 70 %}mid{% else %}low{% endif %}"
+             data-w="{{ s.accuracy }}%" style="width:0%"></div>
+      </div>
+      <div class="bg-samples">{{ s.support }} samples</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="no-model">⚠️ No accuracy data found.</div>
+  {% endif %}
+
+  <div class="divider"></div>
+
+  <p class="sec-title">🔬 DETECT BLOOD GROUP</p>
+  <div class="detect-grid">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-icon">📤</span>
+        <div>
+          <h2>Upload Fingerprint</h2>
+          <p>JPG, PNG, BMP • Max 16MB</p>
+        </div>
+      </div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <div id="upPrompt">
+          <div class="up-icon">👆</div>
+          <h3>Click or Drag & Drop</h3>
+          <p>Place your fingerprint image here</p>
+        </div>
+        <img id="previewImg" alt="preview">
+        <button class="btn-rm" id="removeBtn">✕</button>
+      </div>
+      <button class="btn-detect" id="detectBtn" disabled onclick="analyze()">
+        🔍 DETECT BLOOD GROUP
+      </button>
+    </div>
+
+    <div class="card result-card" id="resultCard" style="display:none">
+      <div class="card-head">
+        <span class="card-icon">🩸</span>
+        <div>
+          <h2>Detection Result</h2>
+          <p>AI analysis complete</p>
+        </div>
+      </div>
+      <div class="result-bg" id="resultBG">--</div>
+      <div class="conf-box">
+        <span class="conf-num" id="confNum">0%</span>
+        <span class="conf-lbl">CONFIDENCE SCORE</span>
+      </div>
+      <div class="feat-row">
+        <div class="feat">
+          <span class="feat-l">Pattern</span>
+          <span class="feat-v" id="patternType">--</span>
+        </div>
+        <div class="feat">
+          <span class="feat-l">Ridge Count</span>
+          <span class="feat-v" id="ridgeCount">--</span>
+        </div>
+        <div class="feat">
+          <span class="feat-l">Minutiae</span>
+          <span class="feat-v" id="minutiaeCount">--</span>
+        </div>
+      </div>
+      <p class="prob-title">PROBABILITY DISTRIBUTION</p>
+      <div id="probChart"></div>
+    </div>
+  </div>
+
+  <footer>
+    Blood Group Detection System v4.0 &nbsp;|&nbsp;
+    Deep Learning · Computer Vision · Biometrics
+    <br><span style="color:#ffaa00">⚠️ For research & educational purposes only — not for clinical use</span>
+  </footer>
+</div>
+<script src="{{ url_for('static',filename='js/script.js') }}"></script>
+</body>
+</html>
