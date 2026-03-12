@@ -3,7 +3,7 @@ gunicorn==21.2.0
 opencv-python-headless
 scikit-learn
 werkzeug==2.3.7
-numpy
+numpy==1.26.4
 gdown
 Pillow
-tensorflow==2.15.0
+tensorflow==2.13.0
