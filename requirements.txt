@@ -7,3 +7,5 @@ numpy==1.24.3
 gdown
 Pillow
 tensorflow==2.13.0
+h5py
+requests
