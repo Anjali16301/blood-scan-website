@@ -21,7 +21,7 @@ model = None
 accuracy_report = None
 
 def download_model():
-    model_file = 'blood_group_model_fixed.h5'
+    model_file = 'blood_group_model_fixed.keras'
     if os.path.exists(model_file):
         size = os.path.getsize(model_file)/(1024*1024)
         print(f"Model already exists! Size: {size:.1f} MB")
@@ -54,7 +54,6 @@ def download_model():
             s = requests.Session()
             url = f'https://drive.google.com/uc?export=download&id={file_id}'
             r = s.get(url, stream=True, timeout=180)
-            # Handle confirmation token for large files
             token = None
             for key, value in r.cookies.items():
                 if key.startswith('download_warning'):
@@ -90,7 +89,7 @@ def download_model():
         except Exception as e:
             print(f"urllib failed: {e}")
 
-        # Method 4 - gdown with different format
+        # Method 4 - gdown v2
         try:
             print("Trying gdown v2...")
             import gdown
@@ -114,7 +113,7 @@ def startup_load():
     global model, accuracy_report
     try:
         download_model()
-        model_file = 'blood_group_model_fixed.h5'
+        model_file = 'blood_group_model_fixed.keras'
         if os.path.exists(model_file):
             size = os.path.getsize(model_file)/(1024*1024)
             print(f"Loading model... ({size:.1f} MB)")
