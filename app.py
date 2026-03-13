@@ -21,10 +21,10 @@ model = None
 accuracy_report = None
 
 def download_model():
-    model_file = 'blood_group_model_fixed.keras'
-    if os.path.exists(model_file):
-        size = os.path.getsize(model_file)/(1024*1024)
-        print(f"Model already exists! Size: {size:.1f} MB")
+    weights_file = 'model_weights.npy'
+    if os.path.exists(weights_file):
+        size = os.path.getsize(weights_file)/(1024*1024)
+        print(f"Weights file exists! Size: {size:.1f} MB")
         return True
     try:
         file_id = os.environ.get('MODEL_FILE_ID','')
@@ -33,14 +33,14 @@ def download_model():
             return False
         print(f"Starting download... id={file_id}")
 
-        # Method 1 - gdown fuzzy
+        # Method 1 - gdown
         try:
             import gdown
             print("Trying gdown...")
             url = f'https://drive.google.com/uc?id={file_id}&export=download&confirm=t'
-            gdown.download(url, model_file, quiet=False, fuzzy=True)
-            if os.path.exists(model_file) and os.path.getsize(model_file) > 1000000:
-                size = os.path.getsize(model_file)/(1024*1024)
+            gdown.download(url, weights_file, quiet=False, fuzzy=True)
+            if os.path.exists(weights_file) and os.path.getsize(weights_file) > 100000:
+                size = os.path.getsize(weights_file)/(1024*1024)
                 print(f"gdown success! Size: {size:.1f} MB")
                 return True
             else:
@@ -48,7 +48,7 @@ def download_model():
         except Exception as e:
             print(f"gdown failed: {e}")
 
-        # Method 2 - requests with session
+        # Method 2 - requests
         try:
             print("Trying requests...")
             s = requests.Session()
@@ -61,16 +61,14 @@ def download_model():
             if token:
                 url = f'https://drive.google.com/uc?export=download&confirm={token}&id={file_id}'
                 r = s.get(url, stream=True, timeout=180)
-            with open(model_file, 'wb') as f:
+            with open(weights_file, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=32768):
                     if chunk:
                         f.write(chunk)
-            if os.path.exists(model_file) and os.path.getsize(model_file) > 1000000:
-                size = os.path.getsize(model_file)/(1024*1024)
+            if os.path.exists(weights_file) and os.path.getsize(weights_file) > 100000:
+                size = os.path.getsize(weights_file)/(1024*1024)
                 print(f"requests success! Size: {size:.1f} MB")
                 return True
-            else:
-                print("requests file too small or missing!")
         except Exception as e:
             print(f"requests failed: {e}")
 
@@ -79,28 +77,13 @@ def download_model():
             print("Trying urllib...")
             import urllib.request
             url = f'https://drive.google.com/uc?export=download&id={file_id}&confirm=t'
-            urllib.request.urlretrieve(url, model_file)
-            if os.path.exists(model_file) and os.path.getsize(model_file) > 1000000:
-                size = os.path.getsize(model_file)/(1024*1024)
+            urllib.request.urlretrieve(url, weights_file)
+            if os.path.exists(weights_file) and os.path.getsize(weights_file) > 100000:
+                size = os.path.getsize(weights_file)/(1024*1024)
                 print(f"urllib success! Size: {size:.1f} MB")
                 return True
-            else:
-                print("urllib file too small or missing!")
         except Exception as e:
             print(f"urllib failed: {e}")
-
-        # Method 4 - gdown v2
-        try:
-            print("Trying gdown v2...")
-            import gdown
-            url = f'https://drive.google.com/file/d/{file_id}/view'
-            gdown.download(url, model_file, quiet=False, fuzzy=True)
-            if os.path.exists(model_file) and os.path.getsize(model_file) > 1000000:
-                size = os.path.getsize(model_file)/(1024*1024)
-                print(f"gdown v2 success! Size: {size:.1f} MB")
-                return True
-        except Exception as e:
-            print(f"gdown v2 failed: {e}")
 
         print("ALL download methods failed!")
         return False
@@ -109,21 +92,60 @@ def download_model():
         print(f"Download error: {e}")
         return False
 
+def build_model():
+    IMG_SIZE = 96
+    inp = tf.keras.Input(shape=(IMG_SIZE,IMG_SIZE,1))
+    x = tf.keras.layers.Conv2D(32,(3,3),padding='same',activation='relu')(inp)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Conv2D(32,(3,3),padding='same',activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling2D(2,2)(x)
+    x = tf.keras.layers.Dropout(0.25)(x)
+    x = tf.keras.layers.Conv2D(64,(3,3),padding='same',activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Conv2D(64,(3,3),padding='same',activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling2D(2,2)(x)
+    x = tf.keras.layers.Dropout(0.25)(x)
+    x = tf.keras.layers.Conv2D(128,(3,3),padding='same',activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Conv2D(128,(3,3),padding='same',activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling2D(2,2)(x)
+    x = tf.keras.layers.Dropout(0.3)(x)
+    x = tf.keras.layers.Conv2D(256,(3,3),padding='same',activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Conv2D(256,(3,3),padding='same',activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling2D(2,2)(x)
+    x = tf.keras.layers.Dropout(0.3)(x)
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    x = tf.keras.layers.Dense(512,activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Dropout(0.5)(x)
+    x = tf.keras.layers.Dense(256,activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Dropout(0.4)(x)
+    out = tf.keras.layers.Dense(len(BLOOD_GROUPS),activation='softmax')(x)
+    return tf.keras.Model(inputs=inp, outputs=out)
+
 def startup_load():
     global model, accuracy_report
     try:
         download_model()
-        model_file = 'blood_group_model_fixed.keras'
-        if os.path.exists(model_file):
-            size = os.path.getsize(model_file)/(1024*1024)
-            print(f"Loading model... ({size:.1f} MB)")
-            model = tf.keras.models.load_model(
-                model_file,
-                compile=False
-            )
-            print("Model ready!")
+        weights_file = 'model_weights.npy'
+        if os.path.exists(weights_file):
+            size = os.path.getsize(weights_file)/(1024*1024)
+            print(f"Building model... weights size: {size:.1f} MB")
+            model = build_model()
+            print("Loading weights into model...")
+            weights = np.load(weights_file, allow_pickle=True)
+            model.set_weights(list(weights))
+            test = np.zeros((1,96,96,1))
+            pred = model.predict(test, verbose=0)
+            print(f"Model ready! Test shape: {pred.shape}")
         else:
-            print("No model file found!")
+            print("No weights file found!")
         if os.path.exists('accuracy_report.json'):
             with open('accuracy_report.json') as f:
                 accuracy_report = json.load(f)
@@ -258,3 +280,5 @@ def predict():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)
+
