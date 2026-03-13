@@ -1,6 +1,7 @@
 from flask import (Flask, render_template, request,
                    jsonify, session, redirect, url_for)
 import cv2, numpy as np, os, json, threading, time
+import requests
 from werkzeug.utils import secure_filename
 import tensorflow as tf
 from functools import wraps
@@ -22,24 +23,91 @@ accuracy_report = None
 def download_model():
     model_file = 'blood_group_model_fixed.h5'
     if os.path.exists(model_file):
-        print("Model already exists!")
+        size = os.path.getsize(model_file)/(1024*1024)
+        print(f"Model already exists! Size: {size:.1f} MB")
         return True
     try:
-        import gdown
         file_id = os.environ.get('MODEL_FILE_ID','')
         if not file_id:
             print("MODEL_FILE_ID not set!")
             return False
-        print("Downloading model from Google Drive...")
-        url = f'https://drive.google.com/uc?id={file_id}'
-        gdown.download(url, model_file, quiet=False)
-        if os.path.exists(model_file):
-            size = os.path.getsize(model_file)/(1024*1024)
-            print(f"Downloaded! Size: {size:.1f} MB")
-            return True
+        print(f"Starting download... id={file_id}")
+
+        # Method 1 - gdown fuzzy
+        try:
+            import gdown
+            print("Trying gdown...")
+            url = f'https://drive.google.com/uc?id={file_id}&export=download&confirm=t'
+            gdown.download(url, model_file, quiet=False, fuzzy=True)
+            if os.path.exists(model_file) and os.path.getsize(model_file) > 1000000:
+                size = os.path.getsize(model_file)/(1024*1024)
+                print(f"gdown success! Size: {size:.1f} MB")
+                return True
+            else:
+                print("gdown file too small or missing!")
+        except Exception as e:
+            print(f"gdown failed: {e}")
+
+        # Method 2 - requests with session
+        try:
+            print("Trying requests...")
+            s = requests.Session()
+            url = f'https://drive.google.com/uc?export=download&id={file_id}'
+            r = s.get(url, stream=True, timeout=180)
+            # Handle confirmation token for large files
+            token = None
+            for key, value in r.cookies.items():
+                if key.startswith('download_warning'):
+                    token = value
+            if token:
+                url = f'https://drive.google.com/uc?export=download&confirm={token}&id={file_id}'
+                r = s.get(url, stream=True, timeout=180)
+            with open(model_file, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=32768):
+                    if chunk:
+                        f.write(chunk)
+            if os.path.exists(model_file) and os.path.getsize(model_file) > 1000000:
+                size = os.path.getsize(model_file)/(1024*1024)
+                print(f"requests success! Size: {size:.1f} MB")
+                return True
+            else:
+                print("requests file too small or missing!")
+        except Exception as e:
+            print(f"requests failed: {e}")
+
+        # Method 3 - urllib
+        try:
+            print("Trying urllib...")
+            import urllib.request
+            url = f'https://drive.google.com/uc?export=download&id={file_id}&confirm=t'
+            urllib.request.urlretrieve(url, model_file)
+            if os.path.exists(model_file) and os.path.getsize(model_file) > 1000000:
+                size = os.path.getsize(model_file)/(1024*1024)
+                print(f"urllib success! Size: {size:.1f} MB")
+                return True
+            else:
+                print("urllib file too small or missing!")
+        except Exception as e:
+            print(f"urllib failed: {e}")
+
+        # Method 4 - gdown with different format
+        try:
+            print("Trying gdown v2...")
+            import gdown
+            url = f'https://drive.google.com/file/d/{file_id}/view'
+            gdown.download(url, model_file, quiet=False, fuzzy=True)
+            if os.path.exists(model_file) and os.path.getsize(model_file) > 1000000:
+                size = os.path.getsize(model_file)/(1024*1024)
+                print(f"gdown v2 success! Size: {size:.1f} MB")
+                return True
+        except Exception as e:
+            print(f"gdown v2 failed: {e}")
+
+        print("ALL download methods failed!")
         return False
+
     except Exception as e:
-        print(f"Download failed: {e}")
+        print(f"Download error: {e}")
         return False
 
 def startup_load():
@@ -48,20 +116,25 @@ def startup_load():
         download_model()
         model_file = 'blood_group_model_fixed.h5'
         if os.path.exists(model_file):
-            print("Loading model...")
+            size = os.path.getsize(model_file)/(1024*1024)
+            print(f"Loading model... ({size:.1f} MB)")
             model = tf.keras.models.load_model(
                 model_file,
                 compile=False
             )
             print("Model ready!")
         else:
-            print("No model found!")
+            print("No model file found!")
         if os.path.exists('accuracy_report.json'):
             with open('accuracy_report.json') as f:
                 accuracy_report = json.load(f)
             print(f"Report loaded! Accuracy: {accuracy_report.get('test_accuracy')}%")
+        else:
+            print("No accuracy report found!")
     except Exception as e:
         print(f"Startup error: {e}")
+        import traceback
+        traceback.print_exc()
 
 startup_load()
 
@@ -186,4 +259,3 @@ def predict():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port, debug=False)
