@@ -24,46 +24,10 @@
   </header>
 
   {% if report %}
-  <p class="sec-title">📊 MODEL ACCURACY</p>
-  <div class="acc-grid">
-    <div class="acc-card main">
-      <div class="acc-icon">🎯</div>
-      <div class="acc-label">Test Accuracy</div>
-      <div class="acc-number">{{ report.test_accuracy }}<span class="pct">%</span></div>
-      <div class="acc-sub">Final performance on unseen data</div>
-    </div>
-    <div class="acc-card">
-      <div class="acc-icon">📈</div>
-      <div class="acc-label">Train Accuracy</div>
-      <div class="acc-number">{{ report.train_accuracy }}<span class="pct">%</span></div>
-      <div class="acc-sub">{{ report.epochs_trained }} epochs trained</div>
-    </div>
-    <div class="acc-card">
-      <div class="acc-icon">📊</div>
-      <div class="acc-label">Validation Accuracy</div>
-      <div class="acc-number">{{ report.val_accuracy }}<span class="pct">%</span></div>
-      <div class="acc-sub">{{ report.total_images }} total images used</div>
-    </div>
+  <div class="acc-simple">
+    <span class="acc-main">🎯 Model Accuracy:</span>
+    <span class="acc-val">{{ report.test_accuracy }}%</span>
   </div>
-
-  <p class="sec-title">🩸 PER BLOOD GROUP ACCURACY</p>
-  <div class="bg-grid">
-    {% for bg, s in report.per_class.items() %}
-    <div class="bg-card">
-      <div class="bg-name">{{ bg }}</div>
-      <div class="bg-num {% if s.accuracy >= 88 %}good{% elif s.accuracy >= 70 %}mid{% else %}low{% endif %}">
-        {{ s.accuracy }}<span style="font-size:1rem">%</span>
-      </div>
-      <div class="bar-wrap">
-        <div class="bar-fill {% if s.accuracy >= 88 %}good{% elif s.accuracy >= 70 %}mid{% else %}low{% endif %}"
-             data-w="{{ s.accuracy }}%" style="width:0%"></div>
-      </div>
-      <div class="bg-samples">{{ s.support }} samples</div>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="no-model">⚠️ No accuracy data found.</div>
   {% endif %}
 
   <div class="divider"></div>
