@@ -48,7 +48,10 @@ def startup_load():
     download_model()
     if os.path.exists('blood_group_model.h5'):
         print("✅ Loading model into memory...")
-        model = tf.keras.models.load_model('blood_group_model.h5')
+        model = tf.keras.models.load_model(
+            'blood_group_model.h5',
+            compile=False
+        )
         print("✅ Model ready!")
     else:
         print("⚠️ No model found!")
@@ -59,6 +62,9 @@ def startup_load():
         print(f"   Test accuracy: {accuracy_report.get('test_accuracy')}%")
 
 startup_load()
+
+
+
 
 # ── KEEP ALIVE ────────────────────────────────────────────
 def keep_alive():
