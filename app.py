@@ -173,7 +173,8 @@ def extract_features(path):
 
 @app.route('/')
 def home():
-    return redirect(url_for('dashboard') if 'logged_in' in session else url_for('login'))
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.route('/ping')
 def ping():
