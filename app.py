@@ -16,15 +16,16 @@ accuracy_report = None
 
 def download_model():
     wf = 'model_weights.pkl'
+    # Always delete and redownload fresh
     if os.path.exists(wf):
-        print("✅ Weights already exist!")
-        return True
+        os.remove(wf)
+        print("🗑️ Deleted old weights!")
     try:
         file_id = os.environ.get('MODEL_FILE_ID','')
         if not file_id:
             print("⚠️ MODEL_FILE_ID not set!")
             return False
-        print(f"Downloading... id={file_id}")
+        print(f"⬇️ Downloading... id={file_id}")
         try:
             import gdown
             url = f"https://drive.google.com/uc?id={file_id}&export=download&confirm=t"
@@ -99,29 +100,35 @@ def build_model():
 def startup_load():
     global model, accuracy_report
     try:
+        # Download weights
         download_model()
+
+        # Load weights into model
         wf = 'model_weights.pkl'
         if os.path.exists(wf):
             size = os.path.getsize(wf)/(1024*1024)
-            print(f"Building model... {size:.1f} MB")
+            print(f"📦 Building model... {size:.1f} MB")
             model = build_model()
             with open(wf,'rb') as f:
                 weights = pickle.load(f)
-            print(f"Arrays: {len(weights)}")
+            print(f"📊 Arrays: {len(weights)}")
             model.set_weights(weights)
             test = np.zeros((1,96,96,1))
             pred = model.predict(test, verbose=0)
             print(f"✅ Model ready! Max: {np.max(pred[0])*100:.1f}%")
         else:
-            print("⚠️ No weights found!")
+            print("⚠️ No weights file found!")
+
+        # Load accuracy report
         if os.path.exists('accuracy_report.json'):
             with open('accuracy_report.json') as f:
                 accuracy_report = json.load(f)
             print(f"✅ Report loaded! {accuracy_report.get('test_accuracy')}%")
         else:
-            print("⚠️ No accuracy report!")
+            print("⚠️ No accuracy_report.json found!")
+
     except Exception as e:
-        print(f"Startup error: {e}")
+        print(f"❌ Startup error: {e}")
         import traceback
         traceback.print_exc()
 
