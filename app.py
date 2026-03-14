@@ -16,7 +16,6 @@ accuracy_report = None
 
 def download_model():
     wf = 'model_weights.pkl'
-    # Always delete and redownload fresh
     if os.path.exists(wf):
         os.remove(wf)
         print("🗑️ Deleted old weights!")
@@ -100,17 +99,19 @@ def build_model():
 def startup_load():
     global model, accuracy_report
     try:
-        # Download weights
         download_model()
-
-        # Load weights into model
         wf = 'model_weights.pkl'
         if os.path.exists(wf):
             size = os.path.getsize(wf)/(1024*1024)
             print(f"📦 Building model... {size:.1f} MB")
             model = build_model()
             with open(wf,'rb') as f:
-                weights = pickle.load(f)
+                weights_safe = pickle.load(f)
+            weights = []
+            for w in weights_safe:
+                arr = np.frombuffer(w['data'], dtype=w['dtype'])
+                arr = arr.reshape(w['shape'])
+                weights.append(arr)
             print(f"📊 Arrays: {len(weights)}")
             model.set_weights(weights)
             test = np.zeros((1,96,96,1))
@@ -118,15 +119,12 @@ def startup_load():
             print(f"✅ Model ready! Max: {np.max(pred[0])*100:.1f}%")
         else:
             print("⚠️ No weights file found!")
-
-        # Load accuracy report
         if os.path.exists('accuracy_report.json'):
             with open('accuracy_report.json') as f:
                 accuracy_report = json.load(f)
             print(f"✅ Report loaded! {accuracy_report.get('test_accuracy')}%")
         else:
             print("⚠️ No accuracy_report.json found!")
-
     except Exception as e:
         print(f"❌ Startup error: {e}")
         import traceback
