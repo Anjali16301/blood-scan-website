@@ -1,19 +1,56 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import cv2, numpy as np, os, json, threading, time, pickle, requests
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import tensorflow as tf
 from functools import wraps
+import sqlite3
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.secret_key = os.environ.get('SECRET_KEY','blood_group_2024')
 
-USERS = {'admin':'admin123','doctor':'doctor123','user':'user123'}
 BLOOD_GROUPS = ['A+','A-','B+','B-','AB+','O+','O-']
 model = None
 accuracy_report = None
 
+# ── DATABASE ──────────────────────────────────────────────
+def init_db():
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  username TEXT UNIQUE NOT NULL,
+                  password TEXT NOT NULL)''')
+    conn.commit()
+    conn.close()
+    print("✅ Database ready!")
+
+init_db()
+
+def get_user(username):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM users WHERE username=?', (username,))
+    user = c.fetchone()
+    conn.close()
+    return user
+
+def create_user(username, password):
+    try:
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        hashed = generate_password_hash(password)
+        c.execute('INSERT INTO users (username, password) VALUES (?,?)',
+                  (username, hashed))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+# ── DOWNLOAD MODEL ────────────────────────────────────────
 def download_model():
     wf = 'model_weights.pkl'
     if os.path.exists(wf):
@@ -171,6 +208,7 @@ def extract_features(path):
     pattern = 'Arch' if rc<50000 else 'Loop' if rc<100000 else 'Whorl'
     return {'ridge_count':rc,'minutiae_count':len(contours),'pattern_type':pattern}
 
+# ── ROUTES ────────────────────────────────────────────────
 @app.route('/')
 def home():
     session.clear()
@@ -180,17 +218,45 @@ def home():
 def ping():
     return 'ok', 200
 
+@app.route('/register', methods=['GET','POST'])
+def register():
+    if request.method == 'POST':
+        u = request.form.get('username','').strip()
+        p = request.form.get('password','').strip()
+        c = request.form.get('confirm','').strip()
+        if not u or not p:
+            return render_template('register.html',
+                                   error='Username and password required!')
+        if len(u) < 3:
+            return render_template('register.html',
+                                   error='Username must be 3+ characters!')
+        if len(p) < 6:
+            return render_template('register.html',
+                                   error='Password must be 6+ characters!')
+        if p != c:
+            return render_template('register.html',
+                                   error='Passwords do not match!')
+        if create_user(u, p):
+            return redirect(url_for('login', success='Account created! Please login.'))
+        else:
+            return render_template('register.html',
+                                   error='Username already exists!')
+    return render_template('register.html')
+
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
         u = request.form.get('username','').strip()
         p = request.form.get('password','').strip()
-        if u in USERS and USERS[u] == p:
+        user = get_user(u)
+        if user and check_password_hash(user[2], p):
             session['logged_in'] = True
             session['username'] = u
             return redirect(url_for('dashboard'))
-        return render_template('login.html', error='Invalid credentials')
-    return render_template('login.html')
+        return render_template('login.html',
+                               error='Invalid username or password!')
+    success = request.args.get('success','')
+    return render_template('login.html', success=success)
 
 @app.route('/logout')
 def logout():
